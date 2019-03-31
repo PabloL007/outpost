@@ -1,0 +1,4 @@
+flask==1.0.2
+gunicorn==19.9.0
+gevent==1.4.0
+docker==3.7.2
