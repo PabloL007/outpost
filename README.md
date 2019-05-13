@@ -1,4 +1,8 @@
 # Outpost
+
+![Build status](https://img.shields.io/docker/build/pablol007/outpost.svg)
+![Docker pulls](https://img.shields.io/docker/pulls/pablol007/outpost.svg)
+
 Welcome to the outpost repo! This is a simple service that obtains active connection information from running docker
 containers and exposes it through a rest API.
 
@@ -109,10 +113,10 @@ To get started just modify the following docker run command:
 
 ```shell
  docker run -d  \
-   -p 9057:9057
+   -p 9057:9057 \
    -v /var/run/docker.sock:/var/run/docker.sock \
    -e "OUTPOST_INTERFACES=10.0.2.101,192.168.56.101" \
-   --name outpost pablol007/outpost:0.1.0
+   --name outpost pablol007/outpost:0.1.1
 ```
 
 The following variables can be used for configuration:

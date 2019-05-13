@@ -35,10 +35,15 @@ def index():
         host = config['HostConfig']['NetworkMode'] == 'host'
         # Get exposed/mapped ports
         ports = {}
-        for key, port in config['HostConfig']['PortBindings'].items():
-            host_ip = '0.0.0.0' if port[0]['HostIp'] == '' else port[0]['HostIp']
-            ports.update({int(port[0]['HostPort']): host_ip})
-        log.debug('Port Bindings: ' + json.dumps(ports))
+        mappings = {}
+        if config['HostConfig']['PortBindings'] != None:
+            for key, port in config['HostConfig']['PortBindings'].items():
+                host_ip = '0.0.0.0' if port[0]['HostIp'] == '' else port[0]['HostIp']
+                container_port = key.split('/')[0]
+                ports.update({int(container_port): host_ip})
+                mappings.update({int(container_port): int(port[0]['HostPort'])})
+        log.debug('Port bindings: ' + json.dumps(ports))
+        log.debug('Port mappings: ' + json.dumps(mappings))
         # Get connections
         raw_connections = utils.get_container_connections(client, container['Id'], host, list(ports.keys()), log)
         # Transform all interface listeners into individual listeners for each interface and convert mapped ipv4
@@ -46,14 +51,15 @@ def index():
         fan_out = []
         for connection in raw_connections['listening']:
             address = connection['address'] if host else ports[connection['port']]
+            port = connection['port'] if (host or connection['port'] not in mappings) else mappings[connection['port']]
             if address == '00000000:00000000:00000000:00000000' or address == '0.0.0.0':
                 for interface in interfaces:
-                    fan_out += [{'address': interface, 'port': connection['port']}]
+                    fan_out += [{'address': interface, 'port': port}]
                 continue
             elif address.startswith('00000000:00000000:0000FFFF:'):
-                fan_out += [{'address': utils.mapped_ipv6_to_ipv4(address.split(':')[-1]), 'port': connection['port']}]
+                fan_out += [{'address': utils.mapped_ipv6_to_ipv4(address.split(':')[-1]), 'port': port}]
             else:
-                fan_out += [{'address': address, 'port': connection['port']}]
+                fan_out += [{'address': address, 'port': port}]
         raw_connections['listening'] = fan_out
         # Convert mapped ipv4 addresses in the established list
         fan_out = []
